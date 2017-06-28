@@ -1,0 +1,1291 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+	<head>
+		<title>ANITA KWAN - Coldwell Banker Premier Realty - Vancouver, Canada</title>
+		<meta name="Keywords" content="anita, kwan, coldwell, banker, premier, realty, realtor, real, estate, vancouver, bc, canada, homes, houses, apartments">
+		<meta http-equiv="content-type" content="text/html;charset=UTF-8"/>
+		<meta http-equiv="cache-control" content="no-cache"/>
+		<meta http-equiv="pragma" content="no-cache"/>``
+		<meta http-equiv="expires" content="0"/>
+		<!--meta name="Description" content=""-->
+		
+		<!--script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script-->
+		
+		<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+		
+		<script src="lib/galleria/galleria-1.2.5.min.js"></script>
+		
+		<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+	
+		<script>
+			var listings = [];
+		</script>
+		
+		<script src="listings/00/info.js?rev=092411"></script>
+		<script src="listings/01/info.js?rev=092411"></script>
+		<script src="listings/02/info.js?rev=092411"></script>
+		<script src="listings/03/info.js?rev=092411"></script>
+		
+		<script>
+			
+			String.prototype.zpad = function( fieldWidth ) {
+				var fillSize = fieldWidth - this.length;
+				if ( fillSize < 1 )
+					return;
+				return String( Math.pow( 10, fillSize ) ).slice( 1 ) + this;
+			}
+			
+			$( Init );
+			
+			function buySellCallback( data )
+			{
+				var status = "error";
+				try
+				{
+					status = data.status;
+				}
+				catch ( e )
+				{
+					status = "error";
+				}
+				
+				$( "#buySellSubmitting" ).css( { display : "none" } );
+				if ( status == "okay" )
+					$( "#buySellDone" ).css( { display : "block" } );
+				else
+					$( "#buySellError" ).css( { display : "block" } );
+			}
+			
+			function VerifyFormData()
+			{
+				formData = {
+					name : "#clientName",
+					email : "#clientEmail",
+					phone0 : "#clientPhone0",
+					phone1 : "#clientPhone1",
+					action : "#buySellToggle",
+					numBeds : "#numBedsSelect",
+					priceRange : "#priceSelect",
+					comments : "#clientComments"
+				};
+				
+				for ( var k in formData )
+					formData[ k ] = $( formData[ k ] )[ 0 ].value.replace( /^\s+|\s+$/g, '' );
+				
+				formData.minPrice = formData.priceRange.split( "-" )[ 0 ]
+				formData.maxPrice = formData.priceRange.split( "-" )[ 1 ]
+				
+				if ( ! formData.name )
+				{
+					alert( "Please provide your name before submitting." );
+					return null;
+				}
+				
+				if ( formData.email.search( /.+@.+\..+/ ) < 0 )
+					formData.email = "";
+				
+				if ( formData.phone0.split( /\d/ ).length < 10 )
+					formData.phone0 = "";
+				
+				if ( formData.phone1.split( /\d/ ).length < 10 )
+					formData.phone1 = "";
+				
+				if ( ( ! formData.email ) && ( ! formData.phone0 ) && ( ! formData.phone1 ) )
+				{
+					alert( "Please provide a valid email or phone number before submitting." );
+					return null;
+				}
+				
+				return formData;
+			}
+			
+			function Init()
+			{
+				$( ".navButton" ).click( NavSelect );
+				$( "#searchPageAccordion" ).accordion( {
+					fillSpace : true,
+					create : function() { $( ".searchSection" ).css( { overflow : "hidden", padding : "8px" } ); $( "#searchPageAccordion" ).accordion( "activate" , 1 ) }
+				} );
+				//$( "#searchPage" ).css( { display : "none" } );
+				
+				$( "#buySellSubmitButton" ).click( function() {
+					
+					formData = VerifyFormData();
+					if ( ! formData )
+						return;
+
+					$( "#buySellForm" ).css( { display : "none" } );
+					$( "#buySellSubmitting" ).css( { display : "block" } );
+					
+					$.ajax({
+						url: "https://myrmecoid.appspot.com/anitakwan.com/buySellReq",
+						dataType: 'jsonp',
+						type: 'post',
+						/*data: { name : 'greg kwan',
+							email : 'someEmail@a.com',
+							action : 'Buy',
+							numBeds : 2,
+							minPrice : 1000,
+							maxPrice : 9000
+						},*/
+						data : formData,
+						jsonpCallback: 'buySellCallback'
+					}).done( function() {
+					} );
+					
+					// 1. JSONP callback is called
+					// 2. done handler is called
+					
+				} );
+				
+				/*
+				var data = [
+				    {
+				        xthumb: 'thumb.jpg',
+				        image: 'gallery/external01.jpg',
+				        xbig: 'big.jpg',
+				        title: 'XXMy title',
+				        description: 'My description',
+				        link: 'javascript:fade()',
+				        xlayer: '<div><h2>This image is gr8</h2><p>And this text will be on top of the image</p>'
+				    },
+				    {
+				        xthumb: 'thumb2.jpg',
+				        image: 'gallery/external02.jpg',
+				        xbig: 'big2.jpg',
+				        title: 'My second title',
+				        description: 'My second description',
+				        link: 'javascript:fade()',
+				        xlayer: '<div><h2>This image is also gr8</h2><p>Good luck with Galleria!</p>'
+				    }
+				];
+				*/
+				
+				window.galleries = {};
+				galleries.main = [];
+				galleries.active = "main";
+				
+				for ( var i = 0; i < listings.length; i++ )
+				{
+					galleries.main.push( {
+						image : "listings/" + ( "0" + i ).slice( -2 ) + "/00.jpg",
+						link : 'javascript:Switch( pages.listingDetail )',
+						layer : listings[ i ].overlay
+					} );
+					
+					if ( listings[ i ].images && listings[ i ].images.length > 1 )
+					{
+						galleries[ i ] = [];
+						for ( var j = 0; j < listings[ i ].images.length; j++ )
+						{
+							galleries[ i ].push( {
+								image : "listings/" + String( i ).zpad( 2 ) + "/" + String( j ).zpad( 2 ) + ".jpg"
+							} );
+						}
+					}
+				}
+				
+				Galleria.loadTheme( 'lib/galleria/themes/classic/galleria.classic.min.js' );
+			    window.firstRun = true;
+				/*$( "#listingsGallery" ).galleria( {
+			        autoplay: 5000,
+			        transition: "fadeslide",
+					// imageMargin: 30,
+					dataSource: galleries.main,
+					width: 640,
+			        height: 500,
+			        layerFollow : false
+			    });*/
+				
+				$( "#tourButton" ).click( function() {
+					// Galleria.get( 0 ).play( 5000 );
+					//$( "#listingsGallery" ).fadeIn( "fast" );
+					ActivateGallery( listings.active );
+					Galleria.get( 0 ).openLightbox( 0 );
+					$( '.galleria-lightbox-overlay' ).css( 'visibility', 'visible' );
+				} );
+				
+				$( "#cardMail" ).click( function() {
+					window.location.href = "mailto:anitakwan@anitakwan.com";
+				} );
+				
+				$( "#cardLink" ).click( function() {
+					window.location.href = "http://www.premierrealtybc.com";
+				} );
+				
+				
+				/*
+				var latlng = new google.maps.LatLng( -34.397, 150.644 );
+				var myOptions = {
+					zoom: 8,
+					center: latlng,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+				};
+				var map = new google.maps.Map(document.getElementById("mapFrame"),
+					myOptions);
+				*/
+			}
+			
+			function ActivateGallery( galleryName )
+			{
+				if ( galleries.active == galleryName )
+					return;
+				if ( ! ( galleryName in galleries ) )
+					return;
+				
+				var galleria = Galleria.get( 0 );
+				var currSize = galleria.getPrev( 0 ) + 1;
+				var spliceArgs = [ 0, currSize ].concat( galleries[ galleryName ] );
+				galleria.splice.apply( galleria, spliceArgs );
+				
+				galleries.active = galleryName;
+			}
+			
+			var prevNavSel = 0;
+			function NavSelect( evt )
+			{
+				var currNavSel = $( ".navButton" ).index( this );
+				if ( currNavSel < 0 )
+					return;
+				if ( currNavSel == prevNavSel )
+					return;
+				prevNavSel = currNavSel;
+				
+				var newPos = $( this ).offset().top + 22;
+				
+				$( "#navSelector" ).css( { display : "block" } );
+				$( "#navSelector" ).animate( { top : newPos }, { duration : 300 } );
+				Switch( pages[ this.id ] );
+			}
+			
+			var pages = {
+				homeButton : {
+					css : {
+						top:	"120px",
+						left:	"240px",
+						right : "80px",
+						bottom : "40px"
+					},
+					hide : function( callback ) {
+						$( "#homePage" ).fadeOut( "fast", function() { if ( callback ) callback(); $( "#homePage" ).css( { display : "none" } ); } );
+					},
+					show : function( callback ) {
+						$( "#homePage" ).css( { display : "block" } );
+						$( "#homePage" ).fadeTo( "fast", 0.8, callback );
+					}
+				},
+				listingsButton : {
+					css : {
+						top:	"170px",
+						left:	"240px",
+						width : "640px",
+						height : "500px"
+					},
+					hide : function( callback ) {
+						Galleria.get( 0 ).pause();
+						$( "#listingsGallery" ).fadeOut( "fast", callback );
+					},
+					show : function( callback ) {
+						ActivateGallery( "main" );
+						//Galleria.get( 0 ).exitLightbox();
+						$( "#listingsGallery" ).css( { visibility : "visible" } );
+						if ( window.firstRun ) {
+							window.firstRun = false;
+						    $( "#listingsGallery" ).galleria( {
+						        autoplay: 5000,
+						        transition: "fadeslide",
+								// imageMargin: 30,
+								dataSource: galleries.main,
+								width: 640,
+						        height: 500,
+						        layerFollow : false
+						    });
+						}
+						Galleria.get( 0 ).play( 5000 );
+						$( "#listingsGallery" ).fadeIn( "fast", callback );
+					}
+				},
+				contactButton : {
+					css : {
+						top:	"170px",
+						left:	"240px",
+						right : "100px",
+						bottom : "100px"
+					},
+					hide : function( callback ) {
+						$( "#contactPage" ).fadeOut( "fast", function() { if ( callback ) callback(); $( "#contactPage" ).css( { display : "none" } ); } );
+					},
+					show : function( callback ) {
+						$( "#contactPage" ).css( { display : "block" } );
+						$( "#contactPage" ).fadeTo( "fast", 0.8, callback );
+					}
+				},
+				buySellButton : {
+					css : {
+						top:	"120px",
+						left:	"240px",
+						right : "80px",
+						bottom : "40px"
+					},
+					hide : function( callback ) {
+						$( "#buySellPage" ).fadeOut( "fast", function() { if ( callback ) callback(); $( "#buySellPage" ).css( { display : "none" } ); } );
+					},
+					show : function( callback ) {
+						$( "#buySellPage" ).css( { display : "block" } );
+						$( "#buySellPage" ).fadeTo( "fast", 0.8, callback );
+					}
+				},
+				searchButton : {
+					css : {
+						top:	"120px",
+						left:	"200px",
+						right : "20px",
+						bottom : "20px"
+					},
+					hide : function( callback ) {
+						$( "#searchPage" ).fadeOut( "fast", function() { if ( callback ) callback(); $( "#searchPage" ).css( { display : "none" } ); } );
+					},
+					show : function( callback ) {
+						$( "#searchPage" ).css( { display : "block" } );
+						$( "#searchPage" ).css( { visibility : "visible" } );
+						$( "#searchPageAccordion" ).accordion( "resize" );
+						$( ".searchSection" ).css( { overflow : "hidden" } );
+						$( "#searchPage" ).fadeIn( "fast", callback );
+					}
+				},
+				aboutButton : {
+					css : {
+						top:	"170px",
+						left:	"240px",
+						right : "100px",
+						bottom : "100px"
+					},
+					hide : function( callback ) {
+						$( "#aboutPage" ).fadeOut( "fast", function() { if ( callback ) callback(); $( "#aboutPage" ).css( { display : "none" } ); } );
+					},
+					show : function( callback ) {
+						$( "#aboutPage" ).css( { display : "block" } );
+						$( "#aboutPage" ).fadeTo( "fast", 0.8, callback );
+					}
+				},
+				realtyLinkButton : {
+					css : {
+						top:	"300px",
+						left:	"500px",
+						width : "0px",
+						height : "0px"
+					},
+					hide : function( callback ) {
+						// $( "#realtyLinkPage" ).fadeOut( "fast", function() { $( "#realtyLinkPage" ).css( { display : "none" } ); } );
+					},
+					show : function( callback ) {
+						window.location = "http://www.realtylink.org";
+					}
+				},
+				listingDetail : {
+					css : {
+						top:	"120px",
+						left:	"200px",
+						right : "20px",
+						bottom : "20px"
+					},
+					hide : function( callback ) {
+						$( "#detailPage" ).fadeOut( "fast", function() { if ( callback ) callback(); $( "#detailPage" ).css( { display : "none" } ); } );
+					},
+					show : function( callback ) {
+						prevNavSel = -1;
+						$( "#navSelector" ).css( { display : "none" } );
+						var i = Galleria.get( 0 ).getIndex();
+						listings.active = i;
+						var paddedIndex = ( "0" + i ).slice( -2 );
+						var detailPage = $( "#detailPage" );
+						detailPage.css( { display : "block" } );
+						$( "#detailThumb" ).attr( "src", "listings/" + paddedIndex + "/00.jpg" );
+						$( "#detailAddress" ).html( listings[ i ].address );
+						$( "#detailRegion" ).html( listings[ i ].region );
+						if ( listings[ i ].images && listings[ i ].images.length > 1 )
+							$( "#tourButton" ).css( "display", "block" );
+						else
+							$( "#tourButton" ).css( "display", "none" );
+						$( "#detailPrice" ).html( "$" + listings[ i ].price );
+						$( "#detailDescription" ).html( listings[ i ].description );
+						//$( "#detailSpec" ).html( listings[ i ].specs.join( "" ) );
+						$( "#detailSpec" ).html( "" );
+						for ( var j = 0; j < listings[ i ].specs.length; j++ )
+							AppendTable( $( "#detailSpec" ).get( 0 ), listings[ i ].specs[ j ] );
+						detailPage.fadeTo( "fast", 0.8, callback );
+					}
+				}
+			};
+			
+			var oldPage = pages[ "homeButton" ]
+			function Switch( newPage )
+			{
+				/*
+				oldPage.hide( function() {
+					PageTransition( newPage );
+					newPage.show();
+					oldPage = newPage;
+				} );
+				*/
+				oldPage.hide();
+				PageTransition( newPage );
+				newPage.show();
+				oldPage = newPage;
+			}
+			
+			function PageTransition( newPage )
+			{
+				var page = $( "#pageBack" );
+				
+				var oldCss = ConvertToFixed( page, oldPage.css );
+				var newCss = ConvertToFixed( page, newPage.css );
+				
+				if ( "right" in newPage.css )
+					var completionFunc = function() { page.css( ConvertToRelative( page, newPage.css ) ); };
+				else
+					var completionFunc = function() {};
+				
+				page.css( oldCss );
+				delete newCss.bottom;
+				delete newCss.right;
+				page.animate( newCss, { duration : 300, complete : completionFunc } );
+			}
+			
+			function ConvertToFixed( obj, oldCss )
+			{
+				var newCss = {};
+				newCss.right = "auto";
+				newCss.bottom = "auto";
+				newCss.top = oldCss.top;
+				newCss.left = oldCss.left;
+				if ( "width" in oldCss )
+				{
+					newCss.width = oldCss.width;
+					newCss.height = oldCss.height;
+					return newCss;
+				}
+				var offsetParent = obj.offsetParent();
+				newCss.width = offsetParent.width() - parseInt( oldCss.left ) - parseInt( oldCss.right );
+				newCss.height = offsetParent.height() - parseInt( oldCss.top ) - parseInt( oldCss.bottom );
+				newCss.width += "px";
+				newCss.height += "px";
+				return newCss;
+			}
+			
+			function ConvertToRelative( obj, oldCss )
+			{
+				var newCss = {};
+				newCss.width = "auto";
+				newCss.height = "auto";
+				newCss.top = oldCss.top;
+				newCss.left = oldCss.left;
+				if ( "right" in oldCss )
+				{
+					newCss.right = oldCss.right;
+					newCss.bottom = oldCss.bottom;
+					return newCss;
+				}
+				
+				var offsetParent = obj.offsetParent();
+				newCss.right = offsetParent.width() - parseInt( oldCss.width ) - parseInt( oldCss.left );
+				newCss.bottom = offsetParent.height() - parseInt( oldCss.height ) - parseInt( oldCss.top );
+				newCss.right += "px";
+				newCss.bottom += "px";
+				return newCss;
+			}
+			
+			
+			
+			function AppendTable( parent, tableData )
+			{
+				var maxRowSize = 1;
+				rows = [];
+				for ( var i = 0; i < tableData.length; i++ )
+				{
+					var cells = tableData[ i ].split( "|" );
+					var classNames = cells.shift().split( "." );
+					maxRowSize = Math.max( maxRowSize, cells.length );
+					var row = [];
+					for ( var j = 0; j < cells.length; j++ )
+					{
+						if ( cells[ j ] )
+							row.push( [ cells[ j ], 1, classNames[ row.length ] ] );
+						else
+							row[ row.length - 1 ][ 1 ] += 1;
+					}
+					for ( var j = 0; j < row.length; j++ )
+						row[ j ][ 1 ] /= cells.length;
+					rows.push( row );
+				}
+				
+				var table = document.createElement( "table" );
+				table.cellPadding = "0";
+				table.cellSpacing = "0";
+				var tBody = document.createElement( 'tBoDy' );
+				table.appendChild( tBody );
+				
+				for ( var i = 0; i < rows.length; i++ )
+				{
+					var row = rows[ i ];
+					var rowEl = tBody.insertRow( -1 );
+					for ( var j = 0; j < row.length; j++ )
+					{
+						var cell = row[ j ];
+						var cellEl = rowEl.insertCell( -1 );
+						cellEl.colSpan = Math.round( cell[ 1 ] * maxRowSize );
+						cellEl.className = "detailCell " + cell[ 2 ];
+						cellEl.innerHTML = cell[ 0 ];
+					}
+				}
+				
+				parent.appendChild( table );
+			}
+			
+			
+			function ShowMap()
+			{
+				$( "#mapFrame" ).css( { display : "block" } );
+				var latlng = new google.maps.LatLng( -34.397, 150.644 );
+				var myOptions = {
+					zoom: 8,
+					center: latlng,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+				};
+				var map = new google.maps.Map(document.getElementById("mapFrame"),
+					myOptions);
+			}
+			
+			
+			
+		</script>
+		
+		<style>
+			@font-face
+			{
+			    font-family: 'JunctionRegular';
+			    src: url('fonts/junction_02-webfont.eot');
+			    src: url('fonts/junction_02-webfont.eot?#iefix') format('embedded-opentype'),
+			         url('fonts/junction_02-webfont.woff') format('woff'),
+			         url('fonts/junction_02-webfont.ttf') format('truetype'),
+			         url('fonts/junction_02-webfont.svg#JunctionRegular') format('svg');
+			    font-weight: normal;
+			    font-style: normal;
+			
+			}
+			html, body
+			{
+				width:		100%;
+				height:		100%;
+				margin:		0px;
+				padding:	0px;
+			}
+			body
+			{
+				background:		#011027 url( 'img/background.jpg' ) no-repeat top left;
+			}
+			
+			#name
+			{
+				margin-top:		40px;
+				width:			360px;
+				height:			70px;
+				background:		url( 'img/name.png' ) no-repeat center;
+				float:			right;
+			}
+			
+			#nav
+			{
+				position:		absolute;
+				left:			23px;
+				top:			0px;
+				width:			162px;
+				height:			533px;
+				background:		url( 'img/nav.jpg' ) no-repeat top left;
+			}
+			
+			#cardMail
+			{
+				position:	absolute;
+				top:		146px;
+				left:		23px;
+				width:		136px;
+				height:		12px;
+				cursor:		pointer;
+				cursor:		hand;
+			}
+			
+			#cardLink
+			{
+				position:	absolute;
+				top:		158px;
+				left:		23px;
+				width:		162px;
+				height:		12px;
+				cursor:		pointer;
+				cursor:		hand;
+			}
+			
+			.navButton
+			{
+				position:	absolute;
+				left:		23px;
+				width:		160px;
+				height:		60px;
+				cursor:		pointer;
+				cursor:		hand;
+			}
+			
+			#pageBack
+			{
+				position:			absolute;
+				top:				120px;
+				left:				240px;
+				right:	 			80px;
+				bottom: 			40px;
+				opacity:			0.5;
+				filter:				alpha( opacity = 50 );
+				background-color:	black;
+			}
+			
+			#listingsGallery
+			{
+				visibility:	hidden;
+				xdisplay:	none;
+				position:	absolute;
+				left:		240px;
+				top:		170px;
+			}
+			
+			#homeButton			{ top: 171px; }
+			#listingsButton		{ top: 231px; }
+			#contactButton		{ top: 291px; }
+			#buySellButton		{ top: 351px; }
+			#searchButton		{ top: 411px; }
+			#aboutButton		{ top: 471px; }
+			
+			div .galleria-container
+			{
+				xbackground-color:	red;
+				xopacity:			0.3;
+				xfilter:				alpha( opacity = 30 );
+				background:		transparent;
+			}
+			
+			#test
+			{
+				position: absolute;
+				background-color: green;
+				top: 100px;
+				left: 100px;
+				bottom: 100px;
+				right: 100px;
+			}
+			/* 19, 193 */
+			
+			#navSelector
+			{
+				position:	absolute;
+				top:		193px;
+				left:		19px;
+				width:		172px;
+				height:		23px;
+				background:	url( 'img/navSelector.png' ) no-repeat center;
+			}
+			
+			.pageFront
+			{
+				display:			none;
+				position:			absolute;
+				padding:			20px;
+				left:				260px;
+				top:				190px;
+				bottom:				120px;
+				right:				120px;
+				xbackground:		LightGoldenRodYellow;
+				xbackground:		DarkSeaGreen;
+				background:			black;
+				color:				white;
+				font:				12pt JunctionRegular,"Arial Black",Gadget,sans-serif;
+				xborder:				5px solid #305030;
+				opacity:			0.8;
+				filter:				alpha( opacity = 80 );
+				border-radius: 		5px;
+				-moz-border-radius: 5px;
+			}
+			
+			#homePage
+			{
+				display:			block;
+				font-size:			10pt;
+				overflow:			auto;
+				left:				260px;
+				top:				140px;
+				bottom:				60px;
+				right:				100px;
+			}
+			
+			#aboutPage
+			{
+				font-size:			10pt;
+				overflow:			auto;
+			}
+			
+			#aboutPage li
+			{
+				margin-top:		6pt;
+			}
+			
+			#homePage .bold
+			{
+				font-weight:		bold;
+			}
+			
+			#aboutPage .bold
+			{
+				font-weight:		bold;
+			}
+			
+			#buySellPage
+			{
+				padding:			10px;
+				left:				260px;
+				top:				140px;
+				bottom:				60px;
+				right:				100px;
+				overflow-x:			hidden;
+				overflow-y:			auto;
+				font-size:			10pt;
+			}
+			
+			#buySellSubmitting
+			{
+				display:		none;
+				padding-top:	20px;
+				margin-bottom:	10px;
+				text-align:		center;
+				font-size:		14pt;
+			}
+			
+			#spinner
+			{
+				width:		100%;
+				height:		100px;
+				z-index:	1000;
+				background:	red;
+				overflow:	hidden;
+				background:	black url( 'img/spinner.gif' ) no-repeat center;
+			}
+			
+			#buySellDone
+			{
+				display:		none;
+				padding-top:	20px;
+				font-size:		14pt;
+			}
+
+			#buySellError
+			{
+				display:		none;
+				padding-top:	20px;
+				font-size:		14pt;
+			}
+			
+			#buySellSubmitButton
+			{
+				float:			right;
+				background:		#303040;
+				margin:			10px 40px 10px 10px;
+				padding:		4px;
+				cursor:			pointer;
+				cursor:			hand;
+			}
+			
+			/*
+			#contactPage
+			{
+				font:		bold 16px JunctionRegular,"Arial Black",Gadget,sans-serif;
+			}
+			
+			#buySellPage
+			{
+				font:		bold 16px JunctionRegular,"Arial Black",Gadget,sans-serif;
+			}
+			
+			#aboutPage
+			{
+				font:		16px JunctionRegular,"Arial Black",Gadget,sans-serif;
+			}
+			*/
+			#searchPage
+			{
+				position:	absolute;
+				top:		130px;
+				left:		210px;
+				right:		30px;
+				bottom:		30px;
+				visibility:	hidden;
+			}
+			
+			#searchPage h3
+			{
+				font-size:	62.5%
+			}
+			
+			.searchSection
+			{
+				padding:	0px;
+				overflow:	hidden;
+			}
+			
+			.searchFrame
+			{
+				top:		0px;
+				left:		0px;
+				width:		100%;
+				height:		100%;
+				overflow:	auto;
+			}
+			
+			#detailPage
+			{
+				background:	black;
+				color:		white;
+				font: 		10pt JunctionRegular,Arial,Helvetica,sans-serif;
+				top:		130px;
+				left:		210px;
+				right:		30px;
+				bottom:		30px;
+				overflow-y:	scroll;
+			}
+			
+			#detailThumb
+			{
+				width:	320px;
+				height:	240px;
+				float:	left;
+			}
+			#detailPrice
+			{
+				float:			right;
+				clear:			right;
+				margin-bottom:	12px;
+				font-size:		24pt;
+			}
+			#detailAddress
+			{
+				float:			right;
+				clear:			right;
+				font-size:		14pt;
+			}
+			#detailRegion
+			{
+				float:			right;
+				clear:			right;
+			}
+			#detailDescription
+			{
+				clear:			both;
+				padding-top:	12px;
+				padding-bottom:	12px;
+			}
+			#detailSpec
+			{
+			
+			}
+			
+			#mapFrame
+			{
+				display:	none;
+				position:	absolute;
+				width:		425px;
+				height:		350px;
+			}
+			
+			table
+			{
+				border-collapse:	collapse;
+				border:				8px solid black;
+				-moz-border-radius:	8px;
+			}
+			table td
+			{
+				border:			8px solid black;
+				padding:		2px 10px 2px 10px;
+				background:		#303040;
+			}
+			
+			#detailPage table
+			{
+				font-size:			9pt;
+				float:				left;
+			}
+			.detailCell.c
+			{
+				text-align:		center;
+			}
+			.detailCell.r
+			{
+				text-align:		right;
+			}
+			.detailCell.n
+			{
+				border:			none;
+			}
+			.detailCell.h
+			{
+				border-left:	none;
+				border-right:	none;
+			}
+			
+			.galleria-layer
+			{
+				margin-top:		20px;
+				margin-left:	20px;	
+				width:			80%;
+				height:			40px;
+				opacity:		0.8;
+				filter:			alpha( opacity = 80 );
+				font-family:	"Arial Black",Gadget,sans-serif;
+			}
+			
+			.galleryOverlay
+			{
+				background:			black;
+				color:				white;
+				padding:			8px;
+				border-radius: 		4px;
+				-moz-border-radius: 4px;
+			}
+			
+			#tourButton
+			{
+				display:		none;
+				width:			129px; /*113px;*/
+				height:			56px; /*48px;*/
+				float:			right;
+				clear:			right;
+				margin:			16px 0px 8px 0px;
+				background:		#303040 url( 'img/tourButton.png' ) no-repeat center;
+				cursor:			pointer;
+				cursor:			hand;
+			}
+			
+			div .galleria-lightbox-content
+			{
+				background-color:		black;
+			}
+			div .galleria-lightbox-close,
+			div .galleria-lightbox-prev,
+			div .galleria-lightbox-next,
+			div .galleria-lightbox-info
+			{
+				background-color:		black;
+				color:					#AAAAAA;
+			}
+			
+		</style>
+	</head>
+	<body>
+		<div id="name"></div>
+		<div id="nav"></div>
+		<div id="cardMail"></div>
+		<div id="cardLink"></div>
+		<div class="navButton" id="homeButton"></div>
+		<div class="navButton" id="listingsButton"></div>
+		<div class="navButton" id="contactButton"></div>
+		<div class="navButton" id="buySellButton"></div>
+		<div class="navButton" id="searchButton"></div>
+		<div class="navButton" id="aboutButton"></div>
+		<div id="navSelector"></div>
+		<div id="pageBack"></div>
+		<div id="listingsGallery">
+		</div>
+		<div class="pageFront" id="contactPage">
+			<p>
+				Please feel free to contact me at the following numbers:
+			</p>
+			<table>
+				<tr>
+					<td class="detailCell h"> cell: </td>
+					<td class="detailCell h"> (604) 328-0048 </td>
+				</tr>
+				<tr>
+					<td class="detailCell h"> office: </td>
+					<td class="detailCell h"> (604) 266-1364 </td>
+				</tr>
+				<tr>
+					<td class="detailCell h"> toll-free: </td>
+					<td class="detailCell h"> 1-800-451-6004  </td>
+				</tr>
+				<tr>
+					<td class="detailCell h"> fax: </td>
+					<td class="detailCell h"> (604) 266-2466  </td>
+				</tr>
+			</table>
+			<p>
+				I can also be reached by e-mail (<a href="mailto:anitakwan@anitakwan.com">anitakwan@anitakwan.com</a>).
+			</p>
+		</div>
+		<div class="pageFront" id="buySellPage">
+			<div id="buySellSubmitting">
+				Please wait...
+				<div id="spinner"></div>
+			</div>
+			<div id="buySellDone">
+				Your request has been sent. Thank you for your interest.
+				I will get in touch with you shortly.
+			</div>
+			<div id="buySellError">
+				Sorry, there was a problem submitting your request. Please try
+				again later, or contact me using the information on the contact
+				page instead.
+			</div>
+			<div id="buySellForm">
+				<p>
+					Are you interested in buying or selling a property in Vancouver?
+					Fill in your contact information using the form below, and
+					I will get in touch with you. You can also contact me by email
+					or phone if you prefer (see the contact page). Either way, I look
+					forward to hearing from you.
+				</p>
+				<table>
+					<tr>
+						<td class="detailCell h"> Name: </td>
+						<td class="detailCell h"> <input id="clientName" type=text size="40"></input> </td>
+					</tr>
+					<tr>
+						<td class="detailCell h"> Email: </td>
+						<td class="detailCell h"> <input id="clientEmail" type=text size="40"></input> </td>
+					</tr>
+					<tr>
+						<td class="detailCell h"> Phone No.: </td>
+						<td class="detailCell h"> <input id="clientPhone0" type=text size="40"></input> </td>
+					</tr>
+					<tr>
+						<td class="detailCell h"> Alternate Phone No.: </td>
+						<td class="detailCell h"> <input id="clientPhone1" type=text size="40"></input> </td>
+					</tr>
+					<tr>
+						<td class="detailCell h"> Looking to: </td>
+						<td class="detailCell h">
+							<select id="buySellToggle">
+								<option value="buy"> Buy </option>
+								<option value="sell" selected> Sell </option>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<td class="detailCell h"> No. Bedrooms: </td>
+						<td class="detailCell h">
+							<select id="numBedsSelect">
+								<option value="1"> 1 </option>
+								<option value="2"selected> 2 </option>
+								<option value="3"> 3 </option>
+								<option value="4"> 4 </option>
+								<option value="5"> 5 </option>
+								<option value="6"> 6 </option>
+								<option value="7"> 7 </option>
+								<option value="8"> 8 </option>
+								<option value="9"> 9 </option>
+								<option value="10"> 10+ </option>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<td class="detailCell h"> Price Range (Canadian): </td>
+						<td class="detailCell h">
+							<select id="priceSelect">
+								<option value="0-100000">less than $100,000</option>
+								<option value="100000-200000">$100,000 - $200,000</option>
+								<option value="200000-300000">$200,000 - $300,000</option>
+								<option value="300000-400000">$300,000 - $400,000</option>
+								<option value="400000-500000">$400,000 - $500,000</option>
+								<option value="500000-600000">$500,000 - $600,000</option>
+								<option value="600000-700000">$600,000 - $700,000</option>
+								<option value="700000-800000">$700,000 - $800,000</option>
+								<option value="800000-900000">$800,000 - $900,000</option>
+		
+								<option value="900000-1000000">$900,000 - $1,000,000</option>
+								<option value="1000000-1100000">$1,000,000 - $1,100,000</option>
+								<option value="1100000-1200000">$1,100,000 - $1,200,000</option>
+								<option value="1200000-1300000">$1,200,000 - $1,300,000</option>
+								<option value="1300000-1400000">$1,300,000 - $1,400,000</option>
+								<option value="1400000-1500000">$1,400,000 - $1,500,000</option>
+								<option value="1500000-1600000">$1,500,000 - $1,600,000</option>
+		
+								<option value="1600000-1700000">$1,600,000 - $1,700,000</option>
+								<option value="1700000-1800000">$1,700,000 - $1,800,000</option>
+								<option value="1800000-1900000">$1,800,000 - $1,900,000</option>
+								<option value="1900000-2000000">$1,900,000 - $2,000,000</option>
+								<option value="2000000-2100000">$2,000,000 - $2,100,000</option>
+								<option value="2100000-2200000">$2,100,000 - $2,200,000</option>
+								<option value="2200000-2300000">$2,200,000 - $2,300,000</option>
+		
+								<option value="2300000-2400000">$2,300,000 - $2,400,000</option>
+								<option value="2400000-2500000">$2,400,000 - $2,500,000</option>
+								<option value="2500000-2600000">$2,500,000 - $2,600,000</option>
+								<option value="2600000-2700000">$2,600,000 - $2,700,000</option>
+								<option value="2700000-2800000">$2,700,000 - $2,800,000</option>
+								<option value="2800000-2900000">$2,800,000 - $2,900,000</option>
+		
+								<option value="2900000-3000000">$2,900,000 - $3,000,000</option>
+								<option value="3000000-9999999">more than $3,000,000</option>					
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<td class="detailCell h"> Comments (Optional): </td>
+						<td class="detailCell h">
+							<textarea id="clientComments" cols="40" name="comments" rows="4" wrap="soft"></textarea>
+						</td>
+					</tr>
+				</table>
+				<div id="buySellSubmitButton"> Send &raquo; </div>
+			</div>
+		</div>
+		<div id="searchPage">
+			<div id="searchPageAccordion">
+				<h3><a href="#">Map Search</a></h3>
+				<div class="searchSection">
+					<iframe class="searchFrame" src="http://mlsr.realtylink.org/mlsrframes/areaselect.cfm?cid=1005997"></iframe>
+				</div>
+				<h3><a href="#">Text Search</a></h3>
+				<div class="searchSection">
+					<iframe class="searchFrame" src="http://mlsr.realtylink.org/mlsrframes/res_sale_form.cfm?cid=1005997"></iframe>
+				</div>
+			</div>
+		</div>
+		<div class="pageFront" id="homePage">
+			<p class="bold">
+				ANITA ( LEE WAI &#39;&#26446; &#24935;&#39; ) KWAN R.I.(B.C.), FRI.
+			<br/>
+				Received Diploma in Urban Land Economics at the University of British Columbia.
+			</p>
+			<p>
+				My family and I have lived in Vancouver Westside for over 35 years.
+				After managing my husband's medical practice for ten years, I have been an associate
+				in real estate since 1988. My intimate familiarity with the region is something
+				I can always apply on behalf of my clientele. These are the Top Ten qualities which
+				I believe make me stand out:
+			</p>
+			<ol>
+				<li>
+				<span class="bold">Perseverance</span> &mdash; I will continue to work tirelessly for my clients until everyone
+				is fully satisfied.
+				</li>
+				<li>
+				<span class="bold">Drive</span> &mdash; I will focus all of my skills and resources to the task at hand. I will
+				always try to excel at what I do and perform to the best of my ability.
+				</li>
+				<li>
+				<span class="bold">Interpersonal Skills</span> &mdash; Being a successful realtor requires more than just
+				hard work. As a negotiator, the ability to establish a repport with many different
+				kinds of people is also very important, and this is an area in which I feel I excel.
+				I am a very personable, pleasant, and amicable person by nature. In addition, I am
+				conversant in several languages besides English, including Cantonese, Mandarin and French.
+				</li>
+				<li>
+				<span class="bold">Reliability</span> &mdash; This is the most important quality when first establishing a
+				relationship with a client. I believe the consistency of my efforts provides my
+				clients with the assurance they need to entrust me with something as important as
+				their home.
+				</li>
+				<li>
+				<span class="bold">Responsibility</span> &mdash; This is also important in establishing the trust of my clients.
+				When my clients see that I feel a true sense of involvement in their affairs, that I
+				have a stake in their success, they can rest with ease.
+				</li>
+				<li>
+				<span class="bold">Care</span> &mdash; I care what happens to my clients and have a genuine concern for their
+				welfare. I will do my best to see that they are treated fairly and receive every
+				service and courtesy to which they are entitled.
+				</li>
+				<li>
+				<span class="bold">Understanding</span> &mdash; I have lived in Vancouver Westside for over thirty years myself,
+				so I know the area well. My intimate familiarity with the region is something I can
+				always apply on behalf of my clientele.
+				</li>
+				<li>
+				<span class="bold">Assertiveness</span> &mdash; To be successful in this profession, it is necessary to be
+				assertive &mdash; even, at times, aggressive. Taken too far, however, such qualities
+				can easily become a liability. I believe these components of my character manifest
+				themselves in a productive way, to help my clients and safeguard their interests
+				while not hindering negotiations with &mdash; or worse, offending &mdash; other parties.
+				</li>
+				<li>
+				<span class="bold">Communication</span> &mdash; I deal well with people on a verbal basis. I am articulate,
+				and I feel I can convey my clients' wishes clearly. As negotiations and agreements
+				are so important in real estate, the ability to communicate successfully is an
+				important skill.
+				</li>
+				<li>
+				<span class="bold">Organization</span> &mdash; No number of talents and skills can provide results if they
+				are not organized into a cohesive whole. I am, by nature, an organized person. I
+				use this capacity to impose order and structure to bring my other talents together
+				into an efficient tool for my clients.
+				</li>
+			</ol>
+				 
+			<p>
+				Please feel free to contact me in the event that you, your family, or your friends
+				find yourselves
+				in a position to buy or sell Real Estate in Vancouver, BC &mdash; I hope I can be
+				of help in this regard or any other.
+				
+				Thank you for your interest.
+			</p>
+			<p class="bold">
+				Anita.
+			</p>
+		</div>
+		<div class="pageFront" id="aboutPage">
+			<p class="bold">
+				Professionalism
+			</p>
+			<p>
+				For some time now I’ve been involved in the Vancouver real
+				estate market and have a genuine passion for following real
+				estate news and trends, and ensuring that my clients get the best
+				representation possible. Whether buying, selling, looking to
+				invest or re-financing, I'm confident I can provide you with
+				skilled insight that isn't available anywhere else.
+			<p class="bold">
+				Service
+			</p>
+			<p>
+				The main thing that separates me from other REALTORS<sup>&reg;</sup> is my
+				true passion for what I do. It's this passion that drives me to
+				ensure that I exceed the expectations of any individuals or
+				families who trust me to represent them in one of the most
+				important transactions of their lives. Promptly returning phone
+				calls/emails, keeping clients informed at every step of the
+				transaction and ensuring that I'm never unavailable are all
+				things I consider to be crucial components of good service.   
+			</p>
+		</div>
+		<div class="pageFront" id="detailPage">
+			<div id="mapFrame"></div>
+			<img id="detailThumb"/>
+			<div id="detailPrice"></div>
+			<div id="detailAddress" onclick="ShowMap()"></div>
+			<div id="detailRegion"></div>
+			<div id="tourButton"></div>
+			<div id="detailDescription"></div>
+			<div id="detailSpec"></div>
+		</div>
+		<script>
+			/*
+			$.ajax({
+				type: "GET",
+				url: "test2.js",
+				dataType: "json",
+				success: function(data) { alert( data ); },
+				error: function() { alert( '!!' ); }
+			});
+			*/
+		</script>
+	</body>
+</html>
